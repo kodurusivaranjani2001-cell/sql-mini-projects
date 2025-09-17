@@ -1,0 +1,292 @@
+create database if not exists tirumala;
+use tirumala;
+
+create table devotees(
+    devotee_id int auto_increment primary key,
+    devotee_name varchar(60),
+    devotee_aadhar varchar(12),
+    gender varchar(10),
+    age int,
+    phone varchar(15)
+);
+
+create table offline_booking(
+    off_booking_id int auto_increment primary key,
+    booking_place varchar(50),
+    devotee_id int,
+    darshan_type varchar(50),
+    ticket_price int,
+    foreign key(devotee_id) references devotees(devotee_id)
+);
+
+create table online_booking(
+    on_booking_id int auto_increment primary key,
+    booking_pltfrm varchar(50),
+    darshan_type varchar(50),
+    devotee_id int,
+    ticket_price int,
+    booking_time timestamp default current_timestamp,
+    foreign key(devotee_id) references devotees(devotee_id)
+);
+
+create table free_darshan(
+    freedarshan_id int auto_increment primary key,
+    devotee_id int,
+    foreign key(devotee_id) references devotees(devotee_id)
+);
+
+create table tickets_payment(
+    payment_id int auto_increment primary key,
+    devotee_id int,
+    on_booking_id int,
+    off_booking_id int,
+    payment_mode enum('cash','upi','net banking','not applicable'),
+    payment_status enum('booked','pending','payment failed') default 'pending',
+    foreign key(devotee_id) references devotees(devotee_id),
+    foreign key(on_booking_id) references online_booking(on_booking_id),
+    foreign key(off_booking_id) references offline_booking(off_booking_id)
+);
+
+create table reacheddevotees(
+    reached_devotee_id int auto_increment primary key,
+    devotee_id int,
+    foreign key(devotee_id) references devotees(devotee_id)
+);
+
+create table accomodation(
+    accomodation_id int auto_increment primary key,
+    hotel_cat varchar(60),
+    hotel_price_perhead bigint,
+    reached_devotee_id int,
+    foreign key(reached_devotee_id) references reacheddevotees(reached_devotee_id)
+);
+
+create table maindarshan(
+    mdarshan_id int auto_increment primary key,
+    varaha_visit int default null,
+    main_darshan_emotion varchar(50),
+    reached_devotee_id int,
+    foreign key(reached_devotee_id) references reacheddevotees(reached_devotee_id)
+);
+
+
+create table laddu(
+    laddu_id int auto_increment primary key,
+    mdarshan_id int,
+    quantity int,
+    price int,
+    foreign key(mdarshan_id) references maindarshan(mdarshan_id)
+);
+
+insert into devotees(devotee_name, devotee_aadhar, gender ,age,phone) values
+ ('venkat',	'574838494595','male',45,'85646463'), 
+('Lakshmi', '849302948392', 'Female', 38, '9876543210'), 
+('Ravi',    '638291045672', 'Male', 29, '9123456780'), 
+('Anitha',  '293847562910', 'Female', 25, '9988776655'),
+('Suresh',  '918273645019', 'Male', 52, '9012345678'),
+('Kiran',   '564738291012', 'Male', 34, '9345678123'),
+('Meena',   '837465920183', 'Female', 41, '9445566778'),
+('venkataya','734836558965','male',65,'7546637844'),
+('raghu nath ayyar','76583984364','male',39,'9845774835'),
+('shukla singh','7547654888','male',45,'8748598835'),
+('riya','57438385985','female',16,'8748598835'),
+('roshan','47378584959','male',9,'8748598835');
+
+
+insert into offline_booking(booking_place ,devotee_id ,darshan_type,ticket_price) values 
+('vishnu nivasa complex',1,'300 special entry',300),
+('cro',2,'infant darshan',0),
+('cro',5,'senior citizens',0);
+
+
+insert into online_booking(booking_pltfrm,darshan_type ,devotee_id,ticket_price ) values 
+('ttd website','vip darshan',4,1000),
+('ttd website','special darshan',7,300),
+('govindha app','special darshan',10,300),
+('govindha app','special darshan',11,300),
+('govindha app','special darshanam',12,300);
+
+
+insert into free_darshan(devotee_id) values (3),(9);
+
+
+insert into reacheddevotees(devotee_id) values (1),(3),(10),(11),(12);
+
+
+insert into accomodation(hotel_cat ,hotel_price_perhead ,reached_devotee_id) values 
+('free accomodation', 0,2),
+('paid ac  accomodation',2000,3),
+('paid ordinay accomodation',100,1),
+('paid ac accom',2000,4),
+('paid ac accom',2000,5);
+
+
+insert into maindarshan(varaha_visit,main_darshan_emotion,reached_devotee_id) values 
+(null,'feeling blessed',2),
+(null,'thrilled',3),
+(null,'thrilled',4),
+(3,'emotional',1),
+(1,'spell bound',5);
+
+
+insert into laddu(mdarshan_id ,quantity ,price ) values 
+(3,6,200),
+(2,4,140),
+(1,6,200);
+
+-- 1. List all devotees with their names, age, and gender
+select devotee_name, age, gender
+from devotees;
+
+-- 2. Find devotees who booked darshan online
+select d.devotee_name, onb.on_booking_id, onb.booking_pltfrm
+from online_booking onb
+join devotees d on onb.devotee_id=d.devotee_id;
+
+-- 3. Show all devotees who opted for free darshan
+select d.devotee_name, fd.freedarshan_id
+from free_darshan fd
+join devotees d on fd.devotee_id=d.devotee_id;
+
+-- 4. Retrieve devotees whose age is below 18
+select devotee_name, age
+from devotees
+where age < 18;
+
+-- 5. Get devotees who stayed in paid accommodation
+select d.devotee_name, a.hotel_cat
+from accomodation a
+join reacheddevotees r on a.reached_devotee_id=r.reached_devotee_id
+join devotees d on r.devotee_id=d.devotee_id
+where a.hotel_cat like '%paid%';
+
+-- 6. Show all offline bookings with devotee names
+select d.devotee_name, ofb.off_booking_id, ofb.booking_place
+from devotees d
+join offline_booking ofb on d.devotee_id=ofb.devotee_id;
+
+-- 7. List online bookings with devotee name, darshan type, and ticket price
+select d.devotee_name, onb.darshan_type, onb.ticket_price
+from devotees d
+join online_booking onb on d.devotee_id=onb.devotee_id;
+
+-- 8. Find devotees who made payments using UPI
+select d.devotee_name, tpay.payment_mode
+from devotees d
+join tickets_payment tpay on d.devotee_id=tpay.devotee_id
+where tpay.payment_mode like '%upi%';
+
+-- 9. Display devotee name, darshan type, and payment status
+select d.devotee_name, onb.darshan_type as online_darshan,
+       ofb.darshan_type as offline_darshan, tpay.payment_status
+from devotees d
+left join online_booking onb on d.devotee_id=onb.devotee_id
+left join offline_booking ofb on d.devotee_id=ofb.devotee_id
+left join tickets_payment tpay on d.devotee_id=tpay.devotee_id;
+
+-- 10. Show devotees who reached Tirumala and had main darshan with their emotions
+select d.devotee_name, md.main_darshan_emotion as emotions
+from reacheddevotees r
+join devotees d on r.devotee_id=d.devotee_id
+join maindarshan md on r.reached_devotee_id=md.reached_devotee_id;
+
+-- 11. Count how many devotees have done online booking vs offline booking
+select count(onb.on_booking_id) as online_booking_count,
+       count(ofb.off_booking_id) as offline_booking_count
+from devotees d
+left join online_booking onb on d.devotee_id=onb.devotee_id
+left join offline_booking ofb on d.devotee_id=ofb.devotee_id;
+
+-- 12. Find the total revenue collected from ticket bookings
+select coalesce(booking_type, 'Total') as booking_type,
+       sum(ticket_price) as revenue
+from (
+    select 'online' as booking_type, ticket_price from online_booking
+    union all
+    select 'offline' as booking_type, ticket_price from offline_booking
+) bookings
+group by booking_type with rollup;
+
+-- 13. Find the average age of devotees who booked darshan
+select avg(d.age) as avg_age
+from devotees d
+join (
+    select distinct devotee_id from online_booking
+    union
+    select distinct devotee_id from offline_booking
+) bookings on d.devotee_id=bookings.devotee_id;
+
+-- 14. Show the devotee who bought the maximum laddus
+select d.devotee_name, max(l.quantity) as max_laddus
+from laddu l
+join maindarshan md on l.mdarshan_id=md.mdarshan_id
+join reacheddevotees r on md.reached_devotee_id=r.reached_devotee_id
+join devotees d on r.devotee_id=d.devotee_id
+group by d.devotee_name
+order by max_laddus desc;
+
+-- 15. Count how many devotees stayed in free vs paid accommodation
+select case 
+         when hotel_cat like 'free%' then 'Free'
+         else 'Paid'
+       end as accomodation_type,
+       count(*) as stayed
+from accomodation
+group by accomodation_type;
+
+-- 16. Find devotees who booked online and also purchased laddus
+select d.devotee_name, onb.on_booking_id, l.laddu_id
+from devotees d
+join online_booking onb on d.devotee_id=onb.devotee_id
+join reacheddevotees r on d.devotee_id=r.devotee_id
+join maindarshan md on r.reached_devotee_id=md.reached_devotee_id
+join laddu l on md.mdarshan_id=l.mdarshan_id;
+
+-- 17. List devotees who booked offline but payment is still pending
+select d.devotee_name,
+       case 
+         when tpay.payment_status like '%pending%' then 'payment pending'
+         else 'paid'
+       end as payment_status
+from devotees d
+join offline_booking ofb on d.devotee_id=ofb.devotee_id
+join tickets_payment tpay on ofb.off_booking_id=tpay.off_booking_id;
+
+-- 18. Get devotee details who visited Varaha Swamy Temple before main darshan
+select d.devotee_name,
+       case when md.varaha_visit is not null then 'varaha visited'
+            else 'not visited'
+       end as before_maindarshan_visit
+from devotees d
+join reacheddevotees r on d.devotee_id=r.devotee_id
+join maindarshan md on r.reached_devotee_id=md.reached_devotee_id;
+
+-- 19. Show devotees with multiple bookings (online + offline)
+select d.devotee_name
+from devotees d
+where exists (select 1 from online_booking ob where ob.devotee_id=d.devotee_id)
+  and exists (select 1 from offline_booking ofb where ofb.devotee_id=d.devotee_id);
+
+-- 20. Top 3 devotees by spending (tickets + accommodation + laddus)
+with spending as (
+    select 
+        d.devotee_id,
+        d.devotee_name,
+        coalesce(sum(onb.ticket_price),0) 
+        + coalesce(sum(ofb.ticket_price),0) as ticket_spending,
+        coalesce(sum(a.hotel_price_perhead),0) as accom_spending,
+        coalesce(sum(l.price),0) as laddu_spending
+    from devotees d
+    left join online_booking onb on d.devotee_id=onb.devotee_id
+    left join offline_booking ofb on d.devotee_id=ofb.devotee_id
+    left join reacheddevotees r on d.devotee_id=r.devotee_id
+    left join accomodation a on r.reached_devotee_id=a.reached_devotee_id
+    left join maindarshan md on r.reached_devotee_id=md.reached_devotee_id
+    left join laddu l on md.mdarshan_id=l.mdarshan_id
+    group by d.devotee_id, d.devotee_name
+)
+select devotee_name,
+       (ticket_spending + accom_spending + laddu_spending) as total_spending
+from spending
+order by total_spending desc
+limit 3;
